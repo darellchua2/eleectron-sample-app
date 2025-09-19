@@ -63,10 +63,15 @@ function startBackend() {
   } else {
     const userDataPath = app.getPath("userData");
     const writableBackendPath = path.join(userDataPath, "backend");
+    const writableLogsPath = path.join(userDataPath, "logs");
+    const writableTmpPath = path.join(userDataPath, "tmp");
 
-    if (!fs.existsSync(writableBackendPath)) {
-      fs.mkdirSync(writableBackendPath, { recursive: true });
-    }
+    // Create all necessary writable directories
+    [writableBackendPath, writableLogsPath, writableTmpPath].forEach(dir => {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    });
 
     // Copy SQLite template DB if needed
     const templateDb = path.join(
@@ -117,7 +122,12 @@ function startBackend() {
       ) || "python3";
     spawnArgs = ["main.py"];
 
+    // Set environment variables for writable paths
     process.env.DATABASE_PATH = targetDb;
+    process.env.LOGS_PATH = writableLogsPath;
+    process.env.TMPDIR = writableTmpPath;
+    process.env.TMP = writableTmpPath;
+    process.env.TEMP = writableTmpPath;
   }
 
   console.log(
@@ -194,10 +204,31 @@ function startStandaloneFrontend() {
     return;
   }
 
+  // Create writable directories in user data path
+  const userDataPath = app.getPath("userData");
+  const writableFrontendPath = path.join(userDataPath, "frontend");
+  const writableCachePath = path.join(writableFrontendPath, ".next", "cache");
+  const writableTmpPath = path.join(userDataPath, "tmp");
+
+  // Ensure writable directories exist
+  [writableFrontendPath, writableCachePath, writableTmpPath].forEach(dir => {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  });
+
   frontendProcess = spawn("node", [serverPath], {
     cwd: standalonePath,
     stdio: "pipe",
-    env: { ...process.env, PORT: "3000", HOSTNAME: "localhost" },
+    env: {
+      ...process.env,
+      PORT: "3000",
+      HOSTNAME: "localhost",
+      NEXT_CACHE: writableCachePath,
+      TMPDIR: writableTmpPath,
+      TMP: writableTmpPath,
+      TEMP: writableTmpPath
+    },
   });
 
   processes.push(frontendProcess.pid);

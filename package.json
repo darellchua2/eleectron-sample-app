@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "description": "Calculator app built with Electron, Python backend and Next.js frontend",
   "main": "main.js",
+  "author": "kkchua <kkchua@betekk.com>",
   "scripts": {
     "electron": "electron .",
     "electron-dev": "electron . --dev",
     "build": "npm run build:frontend && npm run build:backend",
     "build:frontend": "cd frontend && npm run build && cd ..",
-    "build:backend": "cd backend && python3 -m venv prod-venv && source prod-venv/bin/activate && pip install poetry && poetry install --only=main --no-root",
+    "build:backend": "bash -c 'cd backend && rm -rf prod-venv && python3.10 -m venv prod-venv && source prod-venv/bin/activate && pip install --upgrade pip && pip install poetry && poetry install --only=main --no-root'",
     "start": "npm run electron",
     "dev": "npm run electron-dev",
     "package": "electron-builder",
@@ -26,21 +27,22 @@
     "files": [
       "main.js",
       "preload.js",
-      "backend/**/*",
+      "backend/prod-venv/**/*",
+      "backend/*.py",
+      "backend/pyproject.toml",
       "frontend/.next/standalone/**/*",
       "frontend/.next/static/**/*",
       "frontend/public/**/*",
       "!backend/myvenv/**/*",
       "!backend/__pycache__/**/*",
       "!backend/*.db",
-      "!frontend/.next/cache/**/*"
+      "!backend/poetry.lock",
+      "!frontend/.next/cache/**/*",
+      "!frontend/node_modules/**/*"
     ],
     "asarUnpack": [
       "backend/prod-venv/**/*",
-      "frontend/.next/standalone/node_modules/**/*",
-      "frontend/.next/standalone/server.js",
-      "frontend/.next/standalone/package.json",
-      "frontend/.next/standalone/.next/**/*",
+      "frontend/.next/standalone/**/*",
       "frontend/.next/static/**/*",
       "frontend/public/**/*"
     ],
@@ -57,7 +59,8 @@
       "target": "dmg"
     },
     "linux": {
-      "target": "AppImage"
+      "target": "AppImage",
+      "category": "Office"
     }
   },
   "devDependencies": {

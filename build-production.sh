@@ -16,11 +16,28 @@ cd frontend
 npm install
 npm run build
 
-# Copy next runtime into standalone
+# Copy next runtime and static files into standalone
 if [ -d ".next/standalone" ]; then
     echo "📂 Copying Next.js runtime into standalone..."
-    mkdir -p .next/standalone/node_modules
-    cp -r node_modules/next .next/standalone/node_modules/
+
+    # Copy static files to standalone
+    if [ -d ".next/static" ]; then
+        cp -r .next/static .next/standalone/.next/
+    fi
+
+    # Copy public folder to standalone
+    if [ -d "public" ]; then
+        cp -r public .next/standalone/
+    fi
+
+    # Install production dependencies in standalone
+    echo "📦 Installing standalone production dependencies..."
+    cd .next/standalone
+    npm install --production --no-optional
+    cd ../..
+
+    # Ensure proper permissions on standalone directory
+    chmod -R 755 .next/standalone
 fi
 cd ..
 
@@ -31,13 +48,14 @@ cd backend
 # Remove old venv
 rm -rf prod-venv
 
-# Create fresh venv
-python3 -m venv prod-venv
+# Create fresh venv with Python 3.10
+python3.10 -m venv prod-venv
 source prod-venv/bin/activate
 
-# Install production dependencies (export from Poetry)
+# Install Poetry and production dependencies
 pip install --upgrade pip
-poetry export -f requirements.txt --without-hashes --only=main | pip install -r /dev/stdin
+pip install poetry
+poetry install --only=main --no-root
 
 deactivate
 cd ..
