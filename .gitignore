@@ -1,0 +1,30 @@
+# Electron
+dist/
+node_modules/
+*.log
+
+# Backend
+backend/__pycache__/
+backend/*.pyc
+backend/*.db
+backend/.env
+backend/prod-venv/
+
+# Frontend build files
+nextjs-shadcn-app/.next/
+nextjs-shadcn-app/out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.temp
+
+dist/
+node_modules/

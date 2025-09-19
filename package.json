@@ -1,0 +1,71 @@
+{
+  "name": "calculator-electron-app",
+  "version": "1.0.0",
+  "description": "Calculator app built with Electron, Python backend and Next.js frontend",
+  "main": "main.js",
+  "scripts": {
+    "electron": "electron .",
+    "electron-dev": "electron . --dev",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "cd frontend && npm run build && cd ..",
+    "build:backend": "cd backend && python3 -m venv prod-venv && source prod-venv/bin/activate && pip install poetry && poetry install --only=main --no-root",
+    "start": "npm run electron",
+    "dev": "npm run electron-dev",
+    "package": "electron-builder",
+    "package:win": "electron-builder --win",
+    "package:mac": "electron-builder --mac",
+    "package:linux": "electron-builder --linux",
+    "postinstall": "cd frontend && npm install"
+  },
+  "build": {
+    "appId": "com.example.calculator",
+    "productName": "Calculator App",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "backend/**/*",
+      "frontend/.next/standalone/**/*",
+      "frontend/.next/static/**/*",
+      "frontend/public/**/*",
+      "!backend/myvenv/**/*",
+      "!backend/__pycache__/**/*",
+      "!backend/*.db",
+      "!frontend/.next/cache/**/*"
+    ],
+    "asarUnpack": [
+      "backend/prod-venv/**/*",
+      "frontend/.next/standalone/node_modules/**/*",
+      "frontend/.next/standalone/server.js",
+      "frontend/.next/standalone/package.json",
+      "frontend/.next/standalone/.next/**/*",
+      "frontend/.next/static/**/*",
+      "frontend/public/**/*"
+    ],
+    "extraFiles": [
+      {
+        "from": "backend/sqlite-template",
+        "to": "resources/sqlite-template"
+      }
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  },
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4"
+  },
+  "dependencies": {
+    "tree-kill": "^1.2.2",
+    "wait-on": "^9.0.0"
+  }
+}
