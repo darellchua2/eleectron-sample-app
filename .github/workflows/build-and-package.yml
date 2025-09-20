@@ -157,6 +157,8 @@ jobs:
       - name: Package application (Release only)
         if: github.event_name == 'release'
         run: npm run ${{ matrix.package_script }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload artifacts (Release only)
         if: github.event_name == 'release'
