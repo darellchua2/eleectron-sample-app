@@ -106,7 +106,7 @@ jobs:
               cp -r public .next/standalone/
             fi
             cd .next/standalone
-            npm install --production --no-optional
+            npm install --omit=dev --omit=optional
             chmod -R 755 .
           fi
         shell: bash
