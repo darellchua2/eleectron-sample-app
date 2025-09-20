@@ -7,9 +7,12 @@ A full-stack calculator application built with Electron, featuring a Next.js fro
 ```
 electron-example-app/
 ├── main.js                    # Electron main process (CommonJS)
+├── preload.js                 # Electron preload script
 ├── package.json              # Electron app configuration
 ├── .gitignore               # Git ignore rules
 ├── README.md                # This file
+├── start-dev.sh             # Development startup script
+├── build-production.sh      # Production build script
 ├── backend/                 # FastAPI Python backend
 │   ├── main.py             # FastAPI app entry point
 │   ├── routes.py           # API endpoint definitions
@@ -17,9 +20,10 @@ electron-example-app/
 │   ├── database.py         # SQLAlchemy database setup
 │   ├── pyproject.toml      # Python dependencies (Poetry)
 │   ├── poetry.lock         # Lock file for dependencies
-│   ├── myvenv/             # Python virtual environment
+│   ├── myvenv/             # Development virtual environment
+│   ├── prod-venv/          # Production virtual environment (created during build)
 │   └── calculator.db       # SQLite database (created at runtime)
-└── nextjs-shadcn-app/      # Next.js frontend
+└── frontend/               # Next.js frontend
     ├── src/
     │   ├── app/
     │   │   ├── calculator/
@@ -28,7 +32,9 @@ electron-example-app/
     │   │   └── layout.tsx     # Root layout
     │   └── components/ui/     # shadcn/ui components
     ├── package.json          # Frontend dependencies
-    └── next.config.ts        # Next.js configuration
+    ├── next.config.ts        # Next.js configuration
+    └── .next/              # Next.js build output
+        └── standalone/     # Standalone production build
 ```
 
 ## 🚀 Quick Start
@@ -51,12 +57,19 @@ npm install
 
 ### 2. Run the Desktop App
 
+#### Option A: Using the development script (recommended)
+```bash
+# Launch in development mode
+./start-dev.sh
+```
+
+#### Option B: Using npm directly
 ```bash
 # Launch in development mode
 npm run dev
 ```
 
-This will:
+Both methods will:
 - Start the FastAPI backend server (port 8000)
 - Start the Next.js development server (port 3000)
 - Launch the Electron desktop app
@@ -86,7 +99,7 @@ python main.py
 #### Frontend Only (Next.js)
 
 ```bash
-cd nextjs-shadcn-app
+cd frontend
 
 # Install dependencies (if not already done)
 npm install
@@ -164,7 +177,7 @@ poetry install
 
 #### Frontend Build Issues
 ```bash
-cd nextjs-shadcn-app
+cd frontend
 
 # Clear Next.js cache
 rm -rf .next
@@ -193,25 +206,46 @@ npm run dev
 
 ## 🏗️ Build & Distribution
 
-### Development Build
+### Production Build & Distribution
+
+#### Option A: Complete automated build (recommended)
 ```bash
-npm run build
+# Complete build and package process
+./build-production.sh
 ```
 
-### Production Distribution
-```bash
-# Create distributable packages
-npm run dist
+This script will:
+- Install all dependencies
+- Build the Next.js frontend with standalone output
+- Setup production Python virtual environment
+- Package the application for your platform (.exe, .AppImage, .dmg)
+- Output final packages to the `dist/` directory
 
-# Packages will be created in dist/ directory
+#### Option B: Manual build workflow
+```bash
+# 1. Build both frontend and backend
+npm run build
+
+# 2. Package the Electron app
+npm run package
+```
+
+### Platform-Specific Packaging
+```bash
+# Package for specific platforms
+npm run package:win     # Windows (.exe)
+npm run package:mac     # macOS (.dmg)
+npm run package:linux   # Linux (.AppImage)
 ```
 
 ### Build Configuration
 
 The app is configured to build for:
-- **Windows**: NSIS installer
-- **macOS**: DMG package
-- **Linux**: AppImage
+- **Windows**: NSIS installer (.exe)
+- **macOS**: DMG package (.dmg)
+- **Linux**: AppImage (.AppImage)
+
+All packaged applications will be created in the `dist/` directory.
 
 ## 🔧 Configuration
 

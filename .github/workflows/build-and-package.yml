@@ -1,0 +1,181 @@
+name: Build and Package Calculator App
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ published ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            artifact_name: calculator-app-linux
+            package_script: package:linux
+          - os: windows-latest
+            platform: windows
+            artifact_name: calculator-app-windows
+            package_script: package:win
+          - os: macos-latest
+            platform: macos
+            artifact_name: calculator-app-macos
+            package_script: package:mac
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Poetry (Linux/macOS)
+        if: matrix.platform != 'windows'
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install Poetry (Windows)
+        if: matrix.platform == 'windows'
+        run: |
+          (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
+          echo "$env:APPDATA\Python\Scripts" >> $env:GITHUB_PATH
+
+      - name: Install root dependencies
+        run: npm install
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Setup backend virtual environment
+        run: |
+          cd backend
+          python3.10 -m venv myvenv
+        shell: bash
+
+      - name: Activate venv and install backend dependencies (Linux/macOS)
+        if: matrix.platform != 'windows'
+        run: |
+          cd backend
+          source myvenv/bin/activate
+          pip install --upgrade pip
+          pip install poetry
+          poetry install
+
+      - name: Activate venv and install backend dependencies (Windows)
+        if: matrix.platform == 'windows'
+        run: |
+          cd backend
+          .\myvenv\Scripts\activate
+          pip install --upgrade pip
+          pip install poetry
+          poetry install
+        shell: cmd
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Setup frontend standalone
+        run: |
+          cd frontend
+          if [ -d ".next/standalone" ]; then
+            echo "Setting up standalone build..."
+            if [ -d ".next/static" ]; then
+              cp -r .next/static .next/standalone/.next/
+            fi
+            if [ -d "public" ]; then
+              cp -r public .next/standalone/
+            fi
+            cd .next/standalone
+            npm install --production --no-optional
+            chmod -R 755 .
+          fi
+        shell: bash
+
+      - name: Setup production backend
+        run: |
+          cd backend
+          rm -rf prod-venv || true
+          python3.10 -m venv prod-venv
+        shell: bash
+
+      - name: Install production backend dependencies (Linux/macOS)
+        if: matrix.platform != 'windows'
+        run: |
+          cd backend
+          source prod-venv/bin/activate
+          pip install --upgrade pip
+          pip install poetry
+          poetry install --only=main --no-root
+
+      - name: Install production backend dependencies (Windows)
+        if: matrix.platform == 'windows'
+        run: |
+          cd backend
+          .\prod-venv\Scripts\activate
+          pip install --upgrade pip
+          pip install poetry
+          poetry install --only=main --no-root
+        shell: cmd
+
+      - name: Package application (Release only)
+        if: github.event_name == 'release'
+        run: npm run ${{ matrix.package_script }}
+
+      - name: Upload artifacts (Release only)
+        if: github.event_name == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+          retention-days: 30
+
+  create-release:
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -R artifacts
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/**/*.exe
+            artifacts/**/*.dmg
+            artifacts/**/*.AppImage
+            artifacts/**/*.deb
+            artifacts/**/*.rpm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
