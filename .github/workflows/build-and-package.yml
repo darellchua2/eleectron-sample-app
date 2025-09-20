@@ -64,11 +64,19 @@ jobs:
           cd frontend
           npm install
 
-      - name: Setup backend virtual environment
+      - name: Setup backend virtual environment (Linux/macOS)
+        if: matrix.platform != 'windows'
         run: |
           cd backend
           python3.10 -m venv myvenv
         shell: bash
+
+      - name: Setup backend virtual environment (Windows)
+        if: matrix.platform == 'windows'
+        run: |
+          cd backend
+          python -m venv myvenv
+        shell: cmd
 
       - name: Activate venv and install backend dependencies (Linux/macOS)
         if: matrix.platform != 'windows'
@@ -86,7 +94,7 @@ jobs:
           .\myvenv\Scripts\activate
           pip install --upgrade pip
           pip install poetry
-          poetry install
+          poetry install --no-root
         shell: cmd
 
       - name: Build frontend
@@ -111,12 +119,21 @@ jobs:
           fi
         shell: bash
 
-      - name: Setup production backend
+      - name: Setup production backend (Linux/macOS)
+        if: matrix.platform != 'windows'
         run: |
           cd backend
           rm -rf prod-venv || true
           python3.10 -m venv prod-venv
         shell: bash
+
+      - name: Setup production backend (Windows)
+        if: matrix.platform == 'windows'
+        run: |
+          cd backend
+          if exist prod-venv rmdir /s /q prod-venv
+          python -m venv prod-venv
+        shell: cmd
 
       - name: Install production backend dependencies (Linux/macOS)
         if: matrix.platform != 'windows'
